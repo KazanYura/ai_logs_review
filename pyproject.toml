@@ -15,7 +15,8 @@ dependencies = [
     "aiosqlite (>=0.21.0,<0.22.0)",
     "faiss-cpu (>=1.11.0.post1,<2.0.0)",
     "sentence-transformers (>=5.1.0,<6.0.0)",
-    "gpt4all (>=2.8.2,<3.0.0)"
+    "gpt4all (>=2.8.2,<3.0.0)",
+    "singleton-decorator (>=1.0.0,<2.0.0)"
 ]
 
 

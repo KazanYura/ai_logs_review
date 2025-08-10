@@ -1,27 +1,44 @@
-from datetime import datetime
-from typing import Optional
-from pydantic import ValidationError
-from app.core.logging_config import ANONYMIZATION_PATTERNS, LOG_LINE_REGEX
-from app.models.log import LogEntry
-from app.db.base import init_db
+# app/services/log_processor.py
+
+from .vector_search import LogVectorStore
+from sentence_transformers import SentenceTransformer
 from app.db.crud import create_log, save_log_line
+from app.models.log import LogEntry
+from app.core.logging_config import LOG_LINE_REGEX, ANONYMIZATION_PATTERNS
+from datetime import datetime
+from pydantic import ValidationError
+from typing import Optional
 
 class LogProcessor:
     def __init__(self):
-        pass
+        self._embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        self._vector_dim = 384
 
-    async def process_log_text(self, text: str) -> list[LogEntry]:
+    async def process_and_index_log_file(self, text: str):
         lines = text.splitlines()
         processed_entries = []
-
         for line in lines:
             entry = self._process_log_line(line)
-            if entry is not None:
+            if entry:
                 processed_entries.append(entry)
+
+        if not processed_entries:
+            return [], None
+        
         log_id = await create_log()
         for entry in processed_entries:
             await save_log_line(log_id, entry)
-        return processed_entries
+
+        print(f"Creating vector index for new log_id: {log_id}...")
+        vector_store = LogVectorStore(dim=self._vector_dim, log_id=log_id)
+        
+        log_messages = [entry.message for entry in processed_entries]
+        embeddings = self._embedding_model.encode(log_messages)
+        
+        vector_store.add(embeddings, log_messages)
+        vector_store.save()
+
+        return processed_entries, log_id
 
 
     def _anonymize_log(self, text: str) -> str:

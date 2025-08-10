@@ -1609,6 +1609,17 @@ test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "ini2toml[lite] (>=
 type = ["importlib_metadata (>=7.0.2) ; python_version < \"3.10\"", "jaraco.develop (>=7.21) ; sys_platform != \"cygwin\"", "mypy (==1.14.*)", "pytest-mypy"]
 
 [[package]]
+name = "singleton-decorator"
+version = "1.0.0"
+description = "A testable singleton decorator"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "singleton-decorator-1.0.0.tar.gz", hash = "sha256:1a90ad8a8a738be591c9c167fdd677c5d4a43d1bc6b1c128227be1c5e03bee07"},
+]
+
+[[package]]
 name = "sniffio"
 version = "1.3.1"
 description = "Sniff out which async library your code is running under"
@@ -2049,4 +2060,4 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.6.3)
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "acc2052c5d8d5948443312fb352662bcd2d366ea928bbe8ebc73a6b030854ab1"
+content-hash = "fb6e512936b0449612630c7ff1e51f54893fe622a967a437f21f8d43b684a547"

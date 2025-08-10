@@ -1,4 +1,6 @@
 # app/db/crud.py
+
+from sqlalchemy.future import select # <-- Add this import
 from app.db.models import LogLine, Log
 from app.db.base import AsyncSessionLocal
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,3 +28,10 @@ async def create_log():
         await session.commit()
         await session.refresh(log)
         return log.id
+
+
+async def get_log_lines_by_id(log_id: int) -> list[LogLine]:
+    async with AsyncSessionLocal() as session:
+        query = select(LogLine).where(LogLine.log_id == log_id)
+        result = await session.execute(query)
+    return result.scalars().all()

@@ -1,6 +1,8 @@
+# app/services/rag.py
+
+import numpy as np
 from sentence_transformers import SentenceTransformer
 from .vector_search import LogVectorStore
-import numpy as np
 
 try:
     from gpt4all import GPT4All
@@ -8,64 +10,52 @@ except ImportError:
     GPT4All = None
 
 class LogRAGService:
-    def __init__(self, embedding_model_name='all-MiniLM-L6-v2', vector_dim=384):
-        self._model = SentenceTransformer(embedding_model_name)
-        self._vector_store = LogVectorStore(dim=vector_dim)
-        self._reasoner_model = None
-        if GPT4All:
-            try:
-                self._reasoner_model = GPT4All("qwen2.5-coder-7b-instruct-q4_0.gguf")
-            except Exception as e:
-                print(f"Could not load GPT4All model: {e}")
+    def __init__(self, log_id: int, embedding_model_name='all-MiniLM-L6-v2', vector_dim=384):
+        print(f"Initializing RAG service for log_id: {log_id}")
+        self._embedding_model = SentenceTransformer(embedding_model_name)
+        self._reasoner_model = self._get_reasoner_model()
+        self._vector_store = LogVectorStore(dim=vector_dim, log_id=log_id)
 
-    def add_logs(self, log_chunks):
-        if not log_chunks: # Guard against empty input
-            return
-        embeddings = self._embed_texts(log_chunks)
-        self._vector_store.add(embeddings, log_chunks)
-
-    def retrieve_logs(self, query, top_k=5):
-        """
-        Public API: Retrieve top_k relevant log chunks for a query.
-        """
-        # Guard against empty queries
-        if not query:
+    def _get_reasoner_model(self):
+        if not GPT4All: return None
+        try:
+            return GPT4All("qwen2.5-coder-7b-instruct-q4_0.gguf")
+        except Exception as e:
+            print(f"Could not load GPT4All model: {e}")
+            return None
+            
+    def retrieve_relevant_logs(self, query: str, top_k: int = 5) -> list[str]:
+        if not query or self._vector_store.index.ntotal == 0:
             return []
-        embeddings = self._embed_texts([query])
-        
-        if embeddings.shape[0] == 0:
-            return []
-        query_emb = embeddings[0]
-        return self._vector_store.search(query_emb, top_k=top_k)
+        query_embedding = self._embedding_model.encode([query])[0]
+        return self._vector_store.search(query_embedding, top_k=top_k)
 
-    def ask_reasoner(self, question, context_chunks, max_tokens=256):
+    def ask_reasoner_v1(self, question: str, context_chunks: list[str], max_tokens: int = 1024) -> str:
         if self._reasoner_model is None:
-            raise RuntimeError("GPT4All is not installed or the model could not be loaded.")
-        
+            raise RuntimeError("GPT4All model not loaded.")
         if not context_chunks:
-            return "I could not find any relevant logs to answer your question."
-
+            return "Based on the provided logs, there is not enough information to answer that question."
         context = "\n".join(context_chunks)
         prompt_template = f"""
         <|system|>
-        You are an expert AI assistant specialized in analyzing log data. Use the following log entries to answer the user's question. Provide a concise and direct answer based only on the given context.
+        You are a Senior Site Reliability Engineer AI. Your task is to analyze the provided log context and identify ALL distinct errors, warnings, and notable anomalies. Do not focus on just one issue.
+
+        If the answer cannot be found, state that clearly.
+
+        For EACH distinct issue you identify which is related to User's Question, structure your response with the following three parts:
+        1.  **Summary:** A one-sentence summary of the specific issue.
+        2.  **Evidence:** Quote the exact log line(s) that point to this issue.
+        3.  **Recommendation:** Suggest a specific next step to investigate or fix this issue.
+
+        Begin your response by stating the total number of distinct issues you found. Separate each issue with a horizontal line (---).
         </s>
         <|user|>
-        Context:
+        ### Log Context Provided:
         {context}
 
-        Question: {question}
+        ### User's Question:
+        {question}
         </s>
         <|assistant|>
         """
-        response = self._reasoner_model.generate(prompt_template.strip(), max_tokens=max_tokens)
-        return response
-
-    def retrieve_relevant_logs(self, query, top_k=5):
-        return self.retrieve_logs(query, top_k=top_k)
-
-    def ask_reasoner_v1(self, question, context_chunks, max_tokens=256):
-        return self.ask_reasoner(question, context_chunks, max_tokens=max_tokens)
-
-    def _embed_texts(self, texts):
-        return self._model.encode(texts, convert_to_numpy=True)
+        return self._reasoner_model.generate(prompt_template.strip(), max_tokens=max_tokens)
