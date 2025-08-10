@@ -1,0 +1,64 @@
+# --- Virtual Environments ---
+# Ignore the virtual environment folder to avoid committing project-specific packages.
+venv/
+.venv/
+env/
+.env/
+env.bak/
+venv.bak/
+
+# --- Python ---
+# Ignore Python's bytecode and distribution artifacts.
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+build/
+dist/
+sdist/
+wheel/
+*.manifest
+*.spec
+
+# --- Secrets & Environment Variables ---
+# Never commit your environment variables or secrets files.
+.env
+.env.*
+*.env
+env.local
+
+# --- IDE & Editor Configurations ---
+# Ignore configuration files from popular IDEs and editors.
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.DS_Store
+
+# --- Testing & Coverage ---
+# Ignore files generated during testing.
+.pytest_cache/
+.tox/
+htmlcov/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+
+# --- Databases ---
+# Ignore local database files.
+*.db
+*.sqlite3
+db.sqlite3
+
+# --- Log Files ---
+# Ignore log files, which can grow large and are environment-specific.
+*.log
+logs/
+*.log.*
+
+# --- Operating System Files ---
+# Ignore OS-specific files (e.g., macOS, Windows).
+.DS_Store
+Thumbs.db
