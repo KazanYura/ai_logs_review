@@ -1,7 +1,7 @@
 # app/services/rag.py
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from .embedding_service import get_embedding_service
 from .vector_search import LogVectorStore
 
 try:
@@ -12,7 +12,7 @@ except ImportError:
 class LogRAGService:
     def __init__(self, log_id: int, embedding_model_name='all-MiniLM-L6-v2', vector_dim=384):
         print(f"Initializing RAG service for log_id: {log_id}")
-        self._embedding_model = SentenceTransformer(embedding_model_name)
+        self._embedding_service = get_embedding_service()
         self._reasoner_model = self._get_reasoner_model()
         self._vector_store = LogVectorStore(dim=vector_dim, log_id=log_id)
 
@@ -27,7 +27,7 @@ class LogRAGService:
     def retrieve_relevant_logs(self, query: str, top_k: int = 5) -> list[str]:
         if not query or self._vector_store.index.ntotal == 0:
             return []
-        query_embedding = self._embedding_model.encode([query])[0]
+        query_embedding = self._embedding_service.encode([query])[0]
         return self._vector_store.search(query_embedding, top_k=top_k)
 
     def ask_reasoner_v1(self, question: str, context_chunks: list[str], max_tokens: int = 1024) -> str:
