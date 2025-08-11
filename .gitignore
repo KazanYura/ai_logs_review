@@ -62,3 +62,7 @@ logs/
 # Ignore OS-specific files (e.g., macOS, Windows).
 .DS_Store
 Thumbs.db
+
+
+# Node modules
+node_modules/
