@@ -1,7 +1,7 @@
 # app/services/log_processor.py
 
 from .vector_search import LogVectorStore
-from sentence_transformers import SentenceTransformer
+from .embedding_service import get_embedding_service
 from app.db.crud import create_log, save_log_line
 from app.models.log import LogEntry
 from app.core.logging_config import LOG_LINE_REGEX, ANONYMIZATION_PATTERNS
@@ -11,7 +11,7 @@ from typing import Optional
 
 class LogProcessor:
     def __init__(self):
-        self._embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        self._embedding_service = get_embedding_service()
         self._vector_dim = 384
 
     async def process_and_index_log_file(self, text: str):
@@ -33,7 +33,7 @@ class LogProcessor:
         vector_store = LogVectorStore(dim=self._vector_dim, log_id=log_id)
         
         log_messages = [entry.message for entry in processed_entries]
-        embeddings = self._embedding_model.encode(log_messages)
+        embeddings = self._embedding_service.encode(log_messages)
         
         vector_store.add(embeddings, log_messages)
         vector_store.save()
