@@ -4,7 +4,7 @@ const API_BASE_URL = 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 seconds timeout for file uploads
+  timeout: 960000, // 30 seconds timeout for file uploads
 });
 
 export const logsApi = {
